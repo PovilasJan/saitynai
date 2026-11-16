@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bbf7d0"/><stop offset="1" stop-color="#f0fdf4"/></linearGradient></defs>
+<rect width="800" height="500" fill="url(#g)"/>
+<circle cx="660" cy="90" r="46" fill="#fff" opacity=".5"/>
+<path d="M0 430 Q200 350 400 420 T800 400 V500 H0z" fill="#65a30d" opacity=".55"/>
+<path d="M0 470 Q250 410 500 460 T800 450 V500 H0z" fill="#65a30d"/>
+<line x1="400" y1="230" x2="230" y2="150" stroke="#334155" stroke-width="14" stroke-linecap="round"/><rect x="222" y="144" width="16" height="22" rx="4" fill="#334155"/><ellipse cx="230" cy="142" rx="70" ry="9" fill="#16a34a" opacity=".35"/><ellipse cx="230" cy="142" rx="70" ry="2.5" fill="#334155"/><line x1="400" y1="230" x2="230" y2="270" stroke="#334155" stroke-width="14" stroke-linecap="round"/><rect x="222" y="264" width="16" height="22" rx="4" fill="#334155"/><ellipse cx="230" cy="262" rx="70" ry="9" fill="#16a34a" opacity=".35"/><ellipse cx="230" cy="262" rx="70" ry="2.5" fill="#334155"/><line x1="400" y1="230" x2="570" y2="150" stroke="#334155" stroke-width="14" stroke-linecap="round"/><rect x="562" y="144" width="16" height="22" rx="4" fill="#334155"/><ellipse cx="570" cy="142" rx="70" ry="9" fill="#16a34a" opacity=".35"/><ellipse cx="570" cy="142" rx="70" ry="2.5" fill="#334155"/><line x1="400" y1="230" x2="570" y2="270" stroke="#334155" stroke-width="14" stroke-linecap="round"/><rect x="562" y="264" width="16" height="22" rx="4" fill="#334155"/><ellipse cx="570" cy="262" rx="70" ry="9" fill="#16a34a" opacity=".35"/><ellipse cx="570" cy="262" rx="70" ry="2.5" fill="#334155"/>
+<rect x="330" y="200" width="140" height="60" rx="22" fill="#334155"/>
+<rect x="360" y="212" width="80" height="14" rx="7" fill="#16a34a"/>
+<rect x="350" y="255" width="100" height="60" rx="12" fill="#16a34a"/><line x1="260" y1="330" x2="540" y2="330" stroke="#334155" stroke-width="6"/><path d="M260 334 l-14 40 h28z" fill="#bae6fd" opacity=".6"/><path d="M330 334 l-14 40 h28z" fill="#bae6fd" opacity=".6"/><path d="M400 334 l-14 40 h28z" fill="#bae6fd" opacity=".6"/><path d="M470 334 l-14 40 h28z" fill="#bae6fd" opacity=".6"/><path d="M540 334 l-14 40 h28z" fill="#bae6fd" opacity=".6"/>
+</svg>
