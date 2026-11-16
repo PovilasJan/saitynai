@@ -51,7 +51,7 @@ export function Footer() {
         </div>
         <div>
           <h4>Kontaktai</h4>
-          <p><MailIcon size={16} /> info@eurodronehub.com</p>
+          <p><MailIcon size={16} /> kontaktai@pavyzdys.lt</p>
           <p><PinIcon size={16} /> Kaunas, Lietuva</p>
         </div>
       </div>
