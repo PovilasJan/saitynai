@@ -1,0 +1,18 @@
+@startuml api-resursai
+!pragma layout smetana
+title EuroDroneHub - REST API resursų hierarchija
+skinparam componentStyle rectangle
+
+component "/api/categories\nGET, POST" as C
+component "/api/categories/{id}\nGET, PUT, DELETE" as C1
+component "/api/categories/{cid}/drones\nGET (hierarchinis), POST" as D
+component "/api/categories/{cid}/drones/{id}\nGET, PUT, DELETE" as D1
+component "/api/categories/{cid}/drones/{did}/reviews\nGET, POST" as R
+component "/api/categories/{cid}/drones/{did}/reviews/{id}\nGET, PUT, DELETE" as R1
+
+C --> C1
+C1 --> D
+D --> D1
+D1 --> R
+R --> R1
+@enduml

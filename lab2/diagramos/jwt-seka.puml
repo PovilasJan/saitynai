@@ -1,0 +1,46 @@
+@startuml jwt-seka
+title EuroDroneHub - JWT autentifikacijos ir žetonų atnaujinimo sekų diagrama
+autonumber
+actor Naudotojas
+participant "React klientas" as UI
+participant "Express API" as API
+database "SQLite" as DB
+
+== Prisijungimas ==
+Naudotojas -> UI : įveda vardą ir slaptažodį
+UI -> API : POST /api/auth/login
+API -> DB : SELECT user, bcrypt.compare
+API -> DB : INSERT refresh_token (7 d.)
+API --> UI : 200 {accessToken (15 min, role), refreshToken}
+UI -> UI : saugo žetonus localStorage
+
+== Apsaugota užklausa ==
+UI -> API : POST /api/categories\nAuthorization: Bearer accessToken
+API -> API : jwt.verify(), tikrina role
+alt role = admin
+  API -> DB : INSERT category
+  API --> UI : 201 Created
+else role = member
+  API --> UI : 403 Forbidden
+end
+
+== Access žetonas pasibaigė ==
+UI -> API : bet kuri užklausa su pasibaigusiu žetonu
+API --> UI : 401 Unauthorized
+UI -> API : POST /api/auth/refresh {refreshToken}
+API -> DB : SELECT refresh_token
+alt galioja ir nepanaudotas
+  API -> DB : UPDATE revoked = 1 (senas)
+  API -> DB : INSERT naujas refresh_token
+  API --> UI : 200 {naujas accessToken, naujas refreshToken}
+  UI -> API : pakartoja pradinę užklausą
+else jau panaudotas (galima vagystė)
+  API -> DB : atšaukia VISUS naudotojo žetonus
+  API --> UI : 401, reikia prisijungti iš naujo
+end
+
+== Atsijungimas ==
+UI -> API : POST /api/auth/logout {refreshToken}
+API -> DB : UPDATE revoked = 1
+API --> UI : 204 No Content
+@enduml

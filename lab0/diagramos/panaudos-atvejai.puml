@@ -1,0 +1,41 @@
+@startuml panaudos-atvejai
+!pragma layout smetana
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+title EuroDroneHub - panaudos atvejų diagrama
+
+actor "Svečias" as Guest
+actor "Narys" as Member
+actor "Administratorius" as Admin
+Member -|> Guest
+Admin -|> Member
+
+rectangle "EuroDroneHub" {
+  usecase "Peržiūrėti kategorijas" as UC1
+  usecase "Peržiūrėti kategorijos dronus" as UC2
+  usecase "Peržiūrėti droną ir specifikaciją" as UC3
+  usecase "Skaityti atsiliepimus" as UC4
+  usecase "Registruotis" as UC5
+  usecase "Prisijungti" as UC6
+  usecase "Rašyti atsiliepimą" as UC7
+  usecase "Redaguoti / trinti savo atsiliepimą" as UC8
+  usecase "Atsijungti" as UC9
+  usecase "Valdyti kategorijas (CRUD)" as UC10
+  usecase "Valdyti dronus (CRUD)" as UC11
+  usecase "Trinti bet kurį atsiliepimą" as UC12
+}
+
+Guest -- UC1
+Guest -- UC2
+Guest -- UC3
+Guest -- UC4
+Guest -- UC5
+Guest -- UC6
+Member -- UC7
+Member -- UC8
+Member -- UC9
+Admin -- UC10
+Admin -- UC11
+Admin -- UC12
+@enduml

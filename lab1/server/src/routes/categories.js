@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
-const { requireRole } = require('../auth');
+const { requireRole } = require('../../../../lab2/auth/auth');
 const { check } = require('../validate');
 
 const schema = {

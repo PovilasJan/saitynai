@@ -1,0 +1,51 @@
+@startuml duomenu-modelis
+!pragma layout smetana
+hide circle
+skinparam classAttributeIconSize 0
+title EuroDroneHub - duomenų modelio (klasių) diagrama
+
+class Category {
+  +id : int
+  +name : string
+  +description : string
+  +created_at : datetime
+}
+class Drone {
+  +id : int
+  +category_id : int
+  +name : string
+  +manufacturer : string
+  +price : real
+  +flight_time : int
+  +weight : int
+  +image_url : string
+  +created_at : datetime
+}
+class Review {
+  +id : int
+  +drone_id : int
+  +user_id : int
+  +rating : int [1..5]
+  +comment : string
+  +recommended : boolean
+  +flown_at : date
+  +created_at : datetime
+}
+class User {
+  +id : int
+  +username : string
+  +password_hash : string
+  +role : {member, admin}
+}
+class RefreshToken {
+  +token : string
+  +user_id : int
+  +expires_at : int
+  +revoked : boolean
+}
+
+Category "1" *-- "0..*" Drone : turi >
+Drone "1" *-- "0..*" Review : turi >
+User "1" -- "0..*" Review : rašo >
+User "1" *-- "0..*" RefreshToken : turi >
+@enduml
