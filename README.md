@@ -40,38 +40,32 @@ saitynai/
 └── Dockerfile, railway.json
 ```
 
-## Paleidimas nuo nulio
+##starting the project
 
-1. Įsidiekite **Node.js 22.13 arba naujesnį** (https://nodejs.org) ir patikrinkite:
-   ```bash
-   node -v
-   ```
-2. Parsisiųskite projektą:
+1. install **Node.js 22.13 arba naujesnį** (https://nodejs.org)
+2. download the project:
    ```bash
    git clone https://github.com/PovilasJan/saitynai.git
    cd saitynai
    ```
-3. Įdiekite priklausomybes (serverio ir kliento):
+3. install dependancies:
    ```bash
    npm run install:all
    ```
-4. Sukompiliuokite React klientą:
+4. build:
    ```bash
    npm run build
    ```
-5. Paleiskite serverį:
+5. run the server:
    ```bash
    npm start
    ```
-6. Atsidarykite http://localhost:3000. Swagger: http://localhost:3000/api-docs.
+6. app http://localhost:3000. Swagger: http://localhost:3000/api-docs
 
-Pirmą kartą paleidus, sukuriamas `server/data.db` failas su demonstraciniais duomenimis (5 kategorijos, 11 dronų, 11 atsiliepimų). Duomenis atstatyti į pradinius:
-
+7. seeding:
 ```bash
 npm run seed
 ```
-
-Kodo keitimui patogiau dviem terminalais (serveris persikrauna pats, klientas http://localhost:5173):
 
 ```bash
 npm run dev:api
@@ -81,14 +75,14 @@ npm run dev:api
 npm run dev:client
 ```
 
-Nebūtini aplinkos kintamieji (numatytosios reikšmės tinka lokaliai):
+env variables
 
-| Kintamasis | Numatyta | Paskirtis |
+| variable | value | needed for |
 |---|---|---|
-| `PORT` | `3000` | serverio portas |
-| `JWT_SECRET` | `dev_access_secret` | JWT parašo raktas (debesyje būtinai savas) |
-| `ACCESS_TTL` | `15m` | access žetono galiojimas |
-| `DB_FILE` | `server/data.db` | SQLite failo kelias |
+| `PORT` | `3000` | server port |
+| `JWT_SECRET` | `dev_access_secret` | jwt secret key |
+| `ACCESS_TTL` | `15m` | access token valid for: |
+| `DB_FILE` | `server/data.db` | SQLite path |
 
 ## Testavimas su Postman
 
