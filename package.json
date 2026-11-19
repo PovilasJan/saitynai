@@ -4,13 +4,13 @@
   "private": true,
   "description": "EuroDroneHub - KTU Saityno taikomųjų programų projektavimas",
   "scripts": {
-    "install:all": "npm install && npm --prefix lab3/client install",
-    "build": "npm --prefix lab3/client run build",
-    "start": "node --no-warnings lab1/server/src/index.js",
-    "dev:api": "node --no-warnings --watch lab1/server/src/index.js",
-    "dev:client": "npm --prefix lab3/client run dev",
-    "seed": "node --no-warnings lab1/server/src/seed.js",
-    "test:api": "npx newman run lab1/EuroDroneHub.postman_collection.json"
+    "install:all": "npm install && npm --prefix client install",
+    "build": "npm --prefix client run build",
+    "start": "node --no-warnings server/src/index.js",
+    "dev:api": "node --no-warnings --watch server/src/index.js",
+    "dev:client": "npm --prefix client run dev",
+    "seed": "node --no-warnings server/src/seed.js",
+    "test:api": "npx newman run postman/EuroDroneHub.postman_collection.json"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

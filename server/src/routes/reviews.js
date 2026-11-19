@@ -1,6 +1,6 @@
 const router = require('express').Router({ mergeParams: true });
 const db = require('../db');
-const { requireRole } = require('../../../../lab2/auth/auth');
+const { requireRole } = require('../auth/auth');
 const { check } = require('../validate');
 const { paging, number, bool, page, listRoute, links } = require('../list');
 

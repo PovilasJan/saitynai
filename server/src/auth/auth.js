@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const db = require('../../lab1/server/src/db');
+const db = require('../db');
 
 const ACCESS_SECRET = process.env.JWT_SECRET || 'dev_access_secret';
 const ACCESS_TTL = process.env.ACCESS_TTL || '15m';

@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
-const { requireRole } = require('../../../../lab2/auth/auth');
+const { requireRole } = require('../auth/auth');
 const { check } = require('../validate');
 const { paging, text, page, listRoute, links } = require('../list');
 
@@ -51,5 +51,7 @@ router.delete('/:id', requireRole('admin'), (req, res) => {
   if (!r.changes) return res.status(404).json({ error: 'Kategorija nerasta' });
   res.status(204).end();
 });
+
+
 
 module.exports = router;

@@ -1,9 +1,9 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const db = require('../../lab1/server/src/db');
+const db = require('../db');
 const { signAccess, readToken, authOptional, requireRole } = require('./auth');
-const { check } = require('../../lab1/server/src/validate');
+const { check } = require('../validate');
 
 const REFRESH_DAYS = 7;
 const creds = { username: { type: 'string', required: true, min: 3, max: 30 }, password: { type: 'string', required: true, min: 6, max: 100 } };

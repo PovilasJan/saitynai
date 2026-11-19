@@ -1,69 +1,135 @@
-# EuroDroneHub – saitynai
+# EuroDroneHub
 
-KTU „Saityno taikomųjų programų projektavimas“. Drone catalogue with reviews: **Category → Drone → Review**.
-Stack: Node.js + Express, SQLite, JWT, React (Vite), Swagger, Postman, Docker, Railway.
+Dronų katalogas su atsiliepimais: **Kategorija → Dronas → Atsiliepimas**.
+Node.js + Express, SQLite, JWT, React (Vite), Docker, Railway.
 
-## Links
-
-| What | Where |
+| | |
 |---|---|
-| Live site | https://saitynai-production-9875ec70.up.railway.app |
-| Swagger (API docs) | https://saitynai-production-9875ec70.up.railway.app/api-docs |
-| API example | https://saitynai-production-9875ec70.up.railway.app/api/categories |
+| Veikianti sistema | https://saitynai-production-9875ec70.up.railway.app |
+| Swagger | https://saitynai-production-9875ec70.up.railway.app/api-docs |
 | GitHub | https://github.com/PovilasJan/saitynai |
-| Railway project | https://railway.com/project/65f5bc7e-e081-4e81-ae2c-14c282101596 |
-| Local site | http://localhost:3000 |
-| Local Swagger | http://localhost:3000/api-docs |
+| Ataskaita | [docs/ataskaita.docx](docs/ataskaita.docx) |
 
-## Logins
+## Prisijungimai
 
-| Role | Username | Password |
+| Rolė | Vardas | Slaptažodis |
 |---|---|---|
-| Admin | `admin` | `admin123` |
-| Moderator | `moderator` | `moder123` |
-| Member | `jonas` | `jonas123` |
-| Member | `ruta` | `ruta123` |
-| Member | `tomas` | `tomas123` |
-| Guest | – (just don't log in) | – |
+| Administratorius | `admin` | `admin123` |
+| Moderatorius | `moderator` | `moder123` |
+| Narys | `jonas` | `jonas123` |
+| Narys | `ruta` | `ruta123` |
+| Svečias | neprisijungti | – |
 
-## Folders
+## Struktūra
 
-| Folder / file | Contents |
-|---|---|
-| `lab0/` | `Lab0_Projekto_uzduotis.docx` + UML use case and deployment diagrams |
-| `lab1/` | `Lab1_REST_API.docx`, `api-spec.yaml` (OpenAPI), Postman collection + 2 environments, UML diagrams, **`server/` = the Express API code** |
-| `lab2/` | `Lab2_Autentifikacija_JWT.docx`, UML sequence + activity diagrams, **`auth/` = the JWT code** (`auth.js`, `routes.js`) |
-| `lab3/` | **`client/` = the React frontend**, wireframes, screenshots |
-| `package.json` | server dependencies + all commands (run them from this root folder) |
-| `Dockerfile`, `railway.json` | cloud deploy |
-| `ATASKAITA.md` | full report in Lithuanian (final report) |
-| `KRITERIJAI.md` | every grading criterion and where it is implemented |
-| `DEFENCE.md` | how to prepare and what to show at each defence |
-
-Each `lab*/diagramos/` folder has the `.png` and the PlantUML source `.puml`.
-
-## Commands
-
-```bash
-npm run install:all   # first time only
-npm run build         # build React
-npm start             # http://localhost:3000
-npm run seed          # reset DB to demo data
-npm run test:api      # run Postman tests from terminal (server must be running)
-railway up            # redeploy to Railway
+```
+saitynai/
+├── server/src/          Express API
+│   ├── app.js           maršrutai, klaidų apdorojimas
+│   ├── db.js            DB lentelės
+│   ├── seed.js          pradiniai duomenys
+│   ├── validate.js      body validacija (400 / 422)
+│   ├── list.js          puslapiavimas, filtrai, _links
+│   ├── routes/          categories, drones, reviews, dashboard
+│   └── auth/            JWT: auth.js (žetonai, rolės), routes.js (register, login, refresh, logout, me)
+├── client/              React klientas (src/pages, src/components.jsx, src/index.css)
+├── postman/             Postman rinkinys + local ir cloud aplinkos
+├── docs/                ataskaita.docx, wireframes/, screenshots/
+├── api-spec.yaml        OpenAPI specifikacija
+├── package.json         visos komandos
+└── Dockerfile, railway.json
 ```
 
-## API in one table
+## Paleidimas nuo nulio
 
-| Resource | List | Create | Get | Update | Delete |
+1. Įsidiekite **Node.js 22.13 arba naujesnį** (https://nodejs.org) ir patikrinkite:
+   ```bash
+   node -v
+   ```
+2. Parsisiųskite projektą:
+   ```bash
+   git clone https://github.com/PovilasJan/saitynai.git
+   cd saitynai
+   ```
+3. Įdiekite priklausomybes (serverio ir kliento):
+   ```bash
+   npm run install:all
+   ```
+4. Sukompiliuokite React klientą:
+   ```bash
+   npm run build
+   ```
+5. Paleiskite serverį:
+   ```bash
+   npm start
+   ```
+6. Atsidarykite http://localhost:3000. Swagger: http://localhost:3000/api-docs.
+
+Pirmą kartą paleidus, sukuriamas `server/data.db` failas su demonstraciniais duomenimis (5 kategorijos, 11 dronų, 11 atsiliepimų). Duomenis atstatyti į pradinius:
+
+```bash
+npm run seed
+```
+
+Kodo keitimui patogiau dviem terminalais (serveris persikrauna pats, klientas http://localhost:5173):
+
+```bash
+npm run dev:api
+```
+
+```bash
+npm run dev:client
+```
+
+Nebūtini aplinkos kintamieji (numatytosios reikšmės tinka lokaliai):
+
+| Kintamasis | Numatyta | Paskirtis |
+|---|---|---|
+| `PORT` | `3000` | serverio portas |
+| `JWT_SECRET` | `dev_access_secret` | JWT parašo raktas (debesyje būtinai savas) |
+| `ACCESS_TTL` | `15m` | access žetono galiojimas |
+| `DB_FILE` | `server/data.db` | SQLite failo kelias |
+
+## Testavimas su Postman
+
+1. Postman → **Import** → pasirinkite visus 3 failus iš `postman/`.
+2. Dešinėje viršuje pasirinkite aplinką **EuroDroneHub-local** (serveris turi veikti) arba **EuroDroneHub-cloud**.
+3. Rinkinys **EuroDroneHub API** → **Run**. Rinkinys pats prisijungia, išsisaugo žetonus ir sukurtų objektų ID (48 užklausos, 116 patikrinimų).
+
+Tas pats iš terminalo (veikiant lokaliam serveriui):
+
+```bash
+npm run test:api
+```
+
+Rinkinys sukuria ir ištrina testinę kategoriją bei užregistruoja naują naudotoją, todėl debesyje jį leiskite tik prieš gynimą, jei reikia.
+
+## Diegimas į Railway
+
+Railway projektas `saitynai` jau sukonfigūruotas: kintamieji `JWT_SECRET`, `DB_FILE=/data/data.db` ir volume `/data`. Perdiegti:
+
+```bash
+railway login
+```
+
+```bash
+railway link --project saitynai --environment production
+```
+
+```bash
+railway up
+```
+
+## API
+
+| Resursas | Sąrašas | Sukurti | Gauti | Atnaujinti | Ištrinti |
 |---|---|---|---|---|---|
-| Categories | `GET /api/categories` | `POST /api/categories` | `GET /api/categories/{id}` | `PUT …/{id}` | `DELETE …/{id}` |
-| Drones (hierarchical) | `GET /api/categories/{cid}/drones` | `POST` same | `GET …/drones/{id}` | `PUT` | `DELETE` |
-| Reviews | `GET …/drones/{did}/reviews` | `POST` same | `GET …/reviews/{id}` | `PUT` | `DELETE` |
+| Kategorijos | `GET /api/categories` | `POST` | `GET /api/categories/{id}` | `PUT` | `DELETE` |
+| Dronai | `GET /api/categories/{cid}/drones` | `POST` | `GET …/drones/{id}` | `PUT` | `DELETE` |
+| Atsiliepimai | `GET …/drones/{did}/reviews` | `POST` | `GET …/reviews/{id}` | `PUT` | `DELETE` |
 
-Lists return `{ data, meta, _links }`. Paging: `?page=1&limit=10`. Filters: categories `?search=`, drones `?manufacturer=&minPrice=&maxPrice=&search=`, reviews `?minRating=&recommended=`. Every object has `_links`.
-
-Dashboard: `GET /api/dashboard` (stats from 4 tables).
-
-Auth: `POST /api/auth/register`, `/login`, `/refresh`, `/logout`, `GET /api/auth/me` (profile + own reviews).
-Access token 15 min (role + id + jti inside), refresh token 7 days, rotated on every refresh. Logout revokes both tokens.
+- Sąrašai: `{ data, meta, _links }`, puslapiavimas `?page=1&limit=10`.
+- Filtrai: kategorijos `?search=`, dronai `?manufacturer=&minPrice=&maxPrice=&search=`, atsiliepimai `?minRating=&recommended=`.
+- Statistika: `GET /api/dashboard`.
+- Autentifikacija: `POST /api/auth/register`, `/login`, `/refresh`, `/logout`, `GET /api/auth/me`. Access žetonas 15 min., refresh 7 d. (keičiamas kiekvieną kartą), logout atšaukia abu.
+- Teisės: kategorijas ir dronus keičia tik `admin`; atsiliepimus rašo prisijungę; savo atsiliepimą keičia autorius, bet kurį – `moderator` ir `admin`.

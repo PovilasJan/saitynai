@@ -1,4 +1,4 @@
 node_modules/
-lab3/client/dist/
+client/dist/
 *.db
 .env
