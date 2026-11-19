@@ -20,8 +20,10 @@ Stack: Node.js + Express, SQLite, JWT, React (Vite), Swagger, Postman, Docker, R
 | Role | Username | Password |
 |---|---|---|
 | Admin | `admin` | `admin123` |
+| Moderator | `moderator` | `moder123` |
 | Member | `jonas` | `jonas123` |
 | Member | `ruta` | `ruta123` |
+| Member | `tomas` | `tomas123` |
 | Guest | – (just don't log in) | – |
 
 ## Folders
@@ -35,6 +37,7 @@ Stack: Node.js + Express, SQLite, JWT, React (Vite), Swagger, Postman, Docker, R
 | `package.json` | server dependencies + all commands (run them from this root folder) |
 | `Dockerfile`, `railway.json` | cloud deploy |
 | `ATASKAITA.md` | full report in Lithuanian (final report) |
+| `KRITERIJAI.md` | every grading criterion and where it is implemented |
 | `DEFENCE.md` | how to prepare and what to show at each defence |
 
 Each `lab*/diagramos/` folder has the `.png` and the PlantUML source `.puml`.
@@ -58,5 +61,9 @@ railway up            # redeploy to Railway
 | Drones (hierarchical) | `GET /api/categories/{cid}/drones` | `POST` same | `GET …/drones/{id}` | `PUT` | `DELETE` |
 | Reviews | `GET …/drones/{did}/reviews` | `POST` same | `GET …/reviews/{id}` | `PUT` | `DELETE` |
 
-Auth: `POST /api/auth/register`, `/login`, `/refresh`, `/logout`, `GET /api/auth/me`.
-Access token 15 min (role inside), refresh token 7 days, rotated on every refresh.
+Lists return `{ data, meta, _links }`. Paging: `?page=1&limit=10`. Filters: categories `?search=`, drones `?manufacturer=&minPrice=&maxPrice=&search=`, reviews `?minRating=&recommended=`. Every object has `_links`.
+
+Dashboard: `GET /api/dashboard` (stats from 4 tables).
+
+Auth: `POST /api/auth/register`, `/login`, `/refresh`, `/logout`, `GET /api/auth/me` (profile + own reviews).
+Access token 15 min (role + id + jti inside), refresh token 7 days, rotated on every refresh. Logout revokes both tokens.

@@ -14,6 +14,97 @@
       "name": "Autentifikacija",
       "item": [
         {
+          "name": "Registracija (naujas narys)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"newUser\", \"pilotas\" + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Rolė member\", () => pm.expect(j.user.role).to.eql(\"member\"));",
+                  "pm.collectionVariables.set(\"newUserToken\", j.accessToken);",
+                  "pm.collectionVariables.set(\"newUserRefresh\", j.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{newUser}}\",\n  \"password\": \"pilotas123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "409 - toks naudotojas jau yra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{newUser}}\",\n  \"password\": \"pilotas123\"\n}"
+            }
+          }
+        },
+        {
           "name": "Prisijungti (admin)",
           "event": [
             {
@@ -220,6 +311,86 @@
               "raw": "{\n  \"username\": \"jonas\",\n  \"password\": \"jonas123\"\n}"
             }
           }
+        },
+        {
+          "name": "Prisijungti (moderatorius)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Rolė moderator\", () => pm.expect(j.user.role).to.eql(\"moderator\"));",
+                  "pm.collectionVariables.set(\"moderatorToken\", j.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"moderator\",\n  \"password\": \"moder123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mano profilis (GET /auth/me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Profilis su atsiliepimais\", () => { pm.expect(j.username).to.eql(\"jonas\"); pm.expect(j.reviews).to.be.an(\"array\"); pm.expect(j.stats).to.have.property(\"review_count\"); });",
+                  "pm.test(\"Hypermedia\", () => pm.expect(j._links.self.href).to.eql(\"/api/auth/me\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{memberToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          }
         }
       ]
     },
@@ -236,7 +407,9 @@
                 "exec": [
                   "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
-                  "pm.test(\"Masyvas\", () => pm.expect(pm.response.json()).to.be.an(\"array\").that.is.not.empty);"
+                  "const j = pm.response.json();",
+                  "pm.test(\"Puslapio formatas\", () => { pm.expect(j.data).to.be.an(\"array\").that.is.not.empty; pm.expect(j.meta).to.include.keys(\"page\", \"limit\", \"total\", \"totalPages\"); });",
+                  "pm.test(\"Hypermedia nuorodos\", () => { pm.expect(j._links.self.href).to.include(\"/api/categories\"); pm.expect(j.data[0]._links.drones.href).to.match(/\\/drones$/); });"
                 ]
               }
             }
@@ -257,6 +430,85 @@
               "path": [
                 "api",
                 "categories"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Kategorijų sąrašas - 2 puslapis",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"2 įrašai, 2 puslapis\", () => { pm.expect(j.data).to.have.lengthOf(2); pm.expect(j.meta.page).to.eql(2); });",
+                  "pm.test(\"Yra prev ir next nuorodos\", () => { pm.expect(j._links.prev.href).to.include(\"page=1\"); pm.expect(j._links.next.href).to.include(\"page=3\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?page=2&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Kategorijų paieška (filtras)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Rasta ir visos atitinka\", () => { pm.expect(j.data).to.not.be.empty; j.data.forEach(c => pm.expect((c.name + \" \" + c.description).toLowerCase()).to.include(\"mini\")); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?search=mini",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "mini"
+                }
               ]
             }
           }
@@ -444,7 +696,9 @@
                 "exec": [
                   "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
-                  "pm.test(\"Yra 1 dronas\", () => pm.expect(pm.response.json()).to.have.lengthOf(1));"
+                  "const j = pm.response.json();",
+                  "pm.test(\"Yra 1 dronas\", () => pm.expect(j.data).to.have.lengthOf(1));",
+                  "pm.test(\"meta.total = 1\", () => pm.expect(j.meta.total).to.eql(1));"
                 ]
               }
             }
@@ -472,6 +726,49 @@
           }
         },
         {
+          "name": "Dronų filtras (gamintojas, kaina)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Visi DJI ir pigesni nei 1000\", () => { pm.expect(j.data).to.not.be.empty; j.data.forEach(d => { pm.expect(d.manufacturer).to.eql(\"DJI\"); pm.expect(d.price).to.be.at.most(1000); }); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/2/drones?manufacturer=DJI&maxPrice=1000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "2",
+                "drones"
+              ],
+              "query": [
+                {
+                  "key": "manufacturer",
+                  "value": "DJI"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "1000"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Gauti droną",
           "event": [
             {
@@ -480,7 +777,9 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Hypermedia: category ir reviews\", () => { pm.expect(j._links.category.href).to.eql(\"/api/categories/\" + pm.collectionVariables.get(\"categoryId\")); pm.expect(j._links.reviews.href).to.match(/\\/reviews$/); });"
                 ]
               }
             }
@@ -616,7 +915,9 @@
                 "exec": [
                   "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
-                  "pm.test(\"Yra 1 atsiliepimas\", () => pm.expect(pm.response.json()).to.have.lengthOf(1));"
+                  "const j = pm.response.json();",
+                  "pm.test(\"Yra 1 atsiliepimas\", () => pm.expect(j.data).to.have.lengthOf(1));",
+                  "pm.test(\"Hypermedia\", () => pm.expect(j.data[0]._links.drone.href).to.include(\"/drones/\"));"
                 ]
               }
             }
@@ -641,6 +942,47 @@
                 "drones",
                 "{{droneId}}",
                 "reviews"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atsiliepimų filtras (minRating)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Visi įvertinti 5\", () => j.data.forEach(r => pm.expect(r.rating).to.eql(5)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/1/drones/1/reviews?minRating=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "1",
+                "drones",
+                "1",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "minRating",
+                  "value": "5"
+                }
               ]
             }
           }
@@ -732,6 +1074,143 @@
           }
         },
         {
+          "name": "403 - kitas narys negali redaguoti svetimo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}/drones/{{droneId}}/reviews/{{reviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{categoryId}}",
+                "drones",
+                "{{droneId}}",
+                "reviews",
+                "{{reviewId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Bandau pakeisti svetimą atsiliepimą\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Moderatorius redaguoja svetimą atsiliepimą",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "pm.test(\"Pakeista\", () => pm.expect(pm.response.json().comment).to.eql(\"Moderatoriaus pataisytas komentaras\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{moderatorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}/drones/{{droneId}}/reviews/{{reviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{categoryId}}",
+                "drones",
+                "{{droneId}}",
+                "reviews",
+                "{{reviewId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Moderatoriaus pataisytas komentaras\"\n}"
+            }
+          }
+        },
+        {
+          "name": "403 - moderatorius negali kurti kategorijų",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{moderatorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Moderatoriaus kategorija\"\n}"
+            }
+          }
+        },
+        {
           "name": "Ištrinti atsiliepimą",
           "event": [
             {
@@ -769,6 +1248,43 @@
                 "{{droneId}}",
                 "reviews",
                 "{{reviewId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Panelė (dashboard)",
+      "item": [
+        {
+          "name": "Panelė - statistika iš kelių esybių",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Suvestinė\", () => pm.expect(j.totals).to.include.keys(\"categories\", \"drones\", \"reviews\", \"users\"));",
+                  "pm.test(\"Sąrašai iš kelių lentelių\", () => { pm.expect(j.categories).to.be.an(\"array\"); pm.expect(j.topDrones).to.be.an(\"array\"); pm.expect(j.latestReviews[0]).to.include.keys(\"username\", \"drone_name\", \"category_name\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dashboard"
               ]
             }
           }
@@ -1101,6 +1617,165 @@
               "raw": "{\n  \"name\": \"Be teisių\"\n}"
             }
           }
+        },
+        {
+          "name": "400 - neteisingas page parametras",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?page=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "400 - neteisingas filtro tipas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/1/drones?minPrice=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "1",
+                "drones"
+              ],
+              "query": [
+                {
+                  "key": "minPrice",
+                  "value": "abc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "422 - privalomo lauko negalima išvalyti (null)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{categoryId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "401 - sugadintas žetonas",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"brokenToken\", \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOjF9.blogas\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{brokenToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          }
         }
       ]
     },
@@ -1217,6 +1892,127 @@
                 "categories",
                 "{{categoryId}}"
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Atsijungimas",
+      "item": [
+        {
+          "name": "Atsijungti (naujas narys)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{newUserRefresh}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "401 - atšauktas access žetonas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "401 - atšauktas refresh žetonas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statusas 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Content-Type JSON\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{newUserRefresh}}\"\n}"
             }
           }
         }

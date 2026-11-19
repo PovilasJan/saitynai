@@ -23,3 +23,11 @@ export const InfoIcon = (p) => <Svg {...p}><circle cx="12" cy="12" r="9" /><path
 export const MailIcon = (p) => <Svg {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></Svg>
 export const PinIcon = (p) => <Svg {...p}><path d="M12 22s7-7 7-12a7 7 0 10-14 0c0 5 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></Svg>
 export const BackIcon = (p) => <Svg {...p}><path d="M15 18l-6-6 6-6" /></Svg>
+export const NextIcon = (p) => <Svg {...p}><path d="M9 18l6-6-6-6" /></Svg>
+export const GridIcon = (p) => <Svg {...p}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></Svg>
+export const ChartIcon = (p) => <Svg {...p}><path d="M3 3v18h18" /><path d="M7 15l4-4 3 3 5-6" /></Svg>
+export const LoginIcon = (p) => <Svg {...p}><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" /></Svg>
+export const UserPlusIcon = (p) => <Svg {...p}><circle cx="9" cy="8" r="4" /><path d="M1 21c0-4 4-6 8-6s8 2 8 6M19 8v6M16 11h6" /></Svg>
+export const SearchIcon = (p) => <Svg {...p}><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></Svg>
+export const CheckIcon = (p) => <Svg {...p}><path d="M20 6L9 17l-5-5" /></Svg>
+export const AlertIcon = (p) => <Svg {...p}><path d="M12 9v4M12 17h.01" /><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></Svg>

@@ -5,6 +5,8 @@ import Category from './pages/Category'
 import Drone from './pages/Drone'
 import { Login, Register } from './pages/Auth'
 import About from './pages/About'
+import Dashboard from './pages/Dashboard'
+import Profile from './pages/Profile'
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/about" element={<About />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<h2>Puslapis nerastas</h2>} />
         </Routes>
       </main>

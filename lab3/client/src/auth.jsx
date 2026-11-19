@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
     setAuth(null); setUser(null)
   }
 
-  return <Ctx.Provider value={{ user, login, register, logout, isAdmin: user?.role === 'admin' }}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{ user, login, register, logout, isAdmin: user?.role === 'admin', canModerate: ['admin', 'moderator'].includes(user?.role) }}>{children}</Ctx.Provider>
 }
 
 export const useAuth = () => useContext(Ctx)

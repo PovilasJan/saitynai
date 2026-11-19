@@ -4,7 +4,8 @@ function validate(body, schema, partial = false) {
   for (const [key, rule] of Object.entries(schema)) {
     const v = body[key];
     if (v === undefined || v === null || v === '') {
-      if (rule.required && !partial) errors.push(`${key} yra privalomas`);
+      // PUT metu laukas gali būti praleistas, bet privalomo lauko negalima išvalyti (null / "")
+      if (rule.required && (!partial || v !== undefined)) errors.push(`${key} yra privalomas ir negali būti tuščias`);
       continue;
     }
     if (rule.type === 'string' && typeof v !== 'string') errors.push(`${key} turi būti tekstas`);

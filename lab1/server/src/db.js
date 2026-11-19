@@ -17,6 +17,11 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   expires_at INTEGER NOT NULL,
   revoked INTEGER NOT NULL DEFAULT 0
 );
+-- atsijungus atšaukti access žetonai (jti), kol nepasibaigė jų galiojimas
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+  jti TEXT PRIMARY KEY,
+  expires_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,

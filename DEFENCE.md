@@ -29,7 +29,7 @@ Running the collection again is fine. It creates its own test data and deletes i
 Show `lab0/Lab0_Projekto_uzduotis.docx`.
 
 - **Name:** EuroDroneHub, a drone catalogue with reviews. The domain is based on eurodronehub.com.
-- **Purpose and functional requirements:** 3 roles (guest, member, admin) and what each can do. Point at the use case diagram.
+- **Purpose and functional requirements:** 3 logged-in roles (member, moderator, admin) plus guest and what each can do. Point at the use case diagram.
 - **UML deployment diagram:** browser → Railway (Docker container: Express + React build + SQLite on a volume).
 - **Technologies:** Express, SQLite, JWT, React, Swagger, Postman, Docker/Railway (table in the doc).
 
@@ -60,7 +60,7 @@ Show `lab2/Lab2_Autentifikacija_JWT.docx` and its sequence diagram.
 2. Paste it into https://jwt.io. The payload shows `"role": "admin"`, which proves the role is stored in the token.
 3. **Refresh strategy:** run **Atnaujinti žetoną (refresh)**. It returns a new token pair. Then run **Senas refresh žetonas atmestas**. The old refresh token gives 401, because each one works once (rotation). Reusing an old one revokes all of that user's tokens.
 4. **Authorization:** run **401 - be žetono** (no token) and **403 - narys negali kurti kategorijos** (member token, admin-only action).
-5. In the website, log in as `jonas`. You can write, edit and delete your own reviews but not other people's. Log in as `admin` and the edit/delete buttons appear everywhere.
+5. In the website, log in as `jonas`. You can write, edit and delete your own reviews but not other people's. Log in as `moderator`: you can edit/delete anyone's review but cannot create categories (403). Log in as `admin` and the edit/delete buttons appear everywhere.
 
 Things they might ask:
 - *Why two tokens?* Access is short (15 min) so a stolen one dies fast. Refresh is long (7 d) but stored in the DB, so it can be revoked.

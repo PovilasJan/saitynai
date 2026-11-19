@@ -1,10 +1,13 @@
 openapi: 3.0.3
 info:
   title: EuroDroneHub API
-  version: 1.0.0
+  version: 1.1.0
   description: |
     Dronų katalogo REST API. Hierarchija: Kategorija -> Dronas -> Atsiliepimas.
-    Rolės: svečias (be žetono), narys (member), administratorius (admin).
+    Rolės: svečias (be žetono), narys (member), moderatorius (moderator), administratorius (admin).
+
+    Sąrašai grąžinami puslapiais: `{ data: [...], meta: { page, limit, total, totalPages }, _links: { self, first, last, prev, next } }`.
+    Puslapiavimas: `?page=1&limit=10` (limit 1-100). Kiekvienas resursas turi `_links` (hypermedia) su susijusių resursų adresais.
 servers:
   - url: http://localhost:3000/api
     description: Lokalus serveris
@@ -13,6 +16,7 @@ tags:
   - name: Categories
   - name: Drones
   - name: Reviews
+  - name: Dashboard
 
 paths:
   /auth/register:
@@ -70,26 +74,84 @@ paths:
   /auth/logout:
     post:
       tags: [Auth]
-      summary: Atsijungimas (refresh žetono atšaukimas)
+      summary: Atsijungimas (refresh ir access žetonų atšaukimas)
+      description: Refresh žetonas pažymimas kaip atšauktas, o Authorization antraštėje atsiųsto access žetono `jti` įrašomas į atšauktų sąrašą - tuo žetonu naudotis nebegalima net iki jo galiojimo pabaigos.
+      security: [{ bearerAuth: [] }]
       requestBody:
         content:
           application/json:
             schema: { type: object, properties: { refreshToken: { type: string } } }
+            example: { refreshToken: 3f9a1c...e7 }
       responses:
-        '204': { description: Atsijungta }
-
-  /categories:
+        '204': { description: Atsijungta, žetonai atšaukti }
+  /auth/me:
     get:
-      tags: [Categories]
-      summary: Kategorijų sąrašas
+      tags: [Auth]
+      summary: Prisijungusio naudotojo profilis su jo atsiliepimais
+      description: Resursas sudaromas iš naudotojų, atsiliepimų, dronų ir kategorijų lentelių.
+      security: [{ bearerAuth: [] }]
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema: { type: array, items: { $ref: '#/components/schemas/Category' } }
+              schema: { $ref: '#/components/schemas/Profile' }
               example:
-                - { id: 1, name: FPV dronai, description: 'Greiti, manevringi dronai lenktynėms.', created_at: '2025-11-16 10:00:00', drone_count: 2 }
+                id: 2
+                username: jonas
+                role: member
+                stats: { review_count: 4, avg_rating: 4.8 }
+                reviews:
+                  - { id: 7, rating: 5, comment: 'Naudojame elektros linijų inspekcijoms, veikia nepriekaištingai.', recommended: true, flown_at: '2025-03-18', drone_id: 6, drone_name: Matrice 350 RTK, category_id: 3, category_name: Pramoniniai dronai, _links: { self: { href: /api/categories/3/drones/6/reviews/7 }, drone: { href: /api/categories/3/drones/6 } } }
+                _links: { self: { href: /api/auth/me }, logout: { href: /api/auth/logout, method: POST } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Katalogo panelė (statistika)
+      description: Vienas resursas, sukonstruotas iš 4 esybių - kategorijų, dronų, atsiliepimų ir naudotojų.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dashboard' }
+              example:
+                totals: { categories: 5, drones: 11, reviews: 11, users: 5, avg_rating: 4.27 }
+                categories:
+                  - { id: 1, name: FPV dronai, drone_count: 2, avg_price: 664, min_price: 329, max_price: 999, _links: { self: { href: /api/categories/1 }, drones: { href: /api/categories/1/drones } } }
+                topDrones:
+                  - { id: 3, name: Mavic 3 Pro, manufacturer: DJI, price: 2199, image_url: /img/cam-1.svg, category_id: 2, category_name: Filmavimo dronai, avg_rating: 5, review_count: 1, _links: { self: { href: /api/categories/2/drones/3 } } }
+                latestReviews:
+                  - { id: 11, rating: 4, comment: 'Vaizdo kokybė stebina tokiam mažam dronui.', created_at: '2026-11-19 10:00:00', username: tomas, drone_id: 4, drone_name: Mini 4 Pro, category_id: 2, category_name: Filmavimo dronai, _links: { self: { href: /api/categories/2/drones/4/reviews/11 }, drone: { href: /api/categories/2/drones/4 } } }
+                _links: { self: { href: /api/dashboard }, categories: { href: /api/categories } }
+
+  /categories:
+    get:
+      tags: [Categories]
+      summary: Kategorijų sąrašas (puslapiavimas, paieška)
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+        - { name: search, in: query, description: Ieško pavadinime ir aprašyme, schema: { type: string }, example: dronai }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryPage' }
+              example:
+                data:
+                  - { id: 1, name: FPV dronai, description: 'Greiti, manevringi dronai lenktynėms.', created_at: '2025-11-16 10:00:00', drone_count: 2, _links: { self: { href: /api/categories/1 }, drones: { href: /api/categories/1/drones } } }
+                  - { id: 2, name: Filmavimo dronai, description: Dronai su stabilizuota kamera., created_at: '2025-11-16 10:00:00', drone_count: 3, _links: { self: { href: /api/categories/2 }, drones: { href: /api/categories/2/drones } } }
+                meta: { page: 1, limit: 2, total: 5, totalPages: 3 }
+                _links:
+                  self: { href: '/api/categories?page=1&limit=2' }
+                  first: { href: '/api/categories?page=1&limit=2' }
+                  last: { href: '/api/categories?page=3&limit=2' }
+                  next: { href: '/api/categories?page=2&limit=2' }
+        '400': { $ref: '#/components/responses/BadQuery' }
     post:
       tags: [Categories]
       summary: Sukurti kategoriją (admin)
@@ -145,15 +207,29 @@ paths:
     parameters: [{ $ref: '#/components/parameters/categoryId' }]
     get:
       tags: [Drones]
-      summary: Visi konkrečios kategorijos dronai (hierarchinis metodas)
+      summary: Konkrečios kategorijos dronai (hierarchinis metodas, filtrai, puslapiavimas)
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+        - { name: manufacturer, in: query, description: Gamintojas (nejautrus raidžių dydžiui), schema: { type: string }, example: DJI }
+        - { name: minPrice, in: query, schema: { type: number }, example: 100 }
+        - { name: maxPrice, in: query, schema: { type: number }, example: 1500 }
+        - { name: search, in: query, description: Ieško modelio pavadinime, schema: { type: string }, example: mini }
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema: { type: array, items: { $ref: '#/components/schemas/Drone' } }
+              schema: { $ref: '#/components/schemas/DronePage' }
               example:
-                - { id: 1, category_id: 1, name: Avata 2, manufacturer: DJI, price: 999, flight_time: 23, weight: 377, image_url: /img/fpv-1.svg, avg_rating: 4.5, review_count: 2 }
+                data:
+                  - { id: 4, category_id: 2, name: Mini 4 Pro, manufacturer: DJI, price: 799, flight_time: 34, weight: 249, image_url: /img/cam-2.svg, created_at: '2025-11-16 10:00:00', avg_rating: 4.5, review_count: 2, _links: { self: { href: /api/categories/2/drones/4 }, category: { href: /api/categories/2 }, reviews: { href: /api/categories/2/drones/4/reviews } } }
+                meta: { page: 1, limit: 10, total: 1, totalPages: 1 }
+                _links:
+                  self: { href: '/api/categories/2/drones?manufacturer=DJI&maxPrice=1000&page=1&limit=10' }
+                  first: { href: '/api/categories/2/drones?manufacturer=DJI&maxPrice=1000&page=1&limit=10' }
+                  last: { href: '/api/categories/2/drones?manufacturer=DJI&maxPrice=1000&page=1&limit=10' }
+        '400': { $ref: '#/components/responses/BadQuery' }
         '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [Drones]
@@ -211,19 +287,31 @@ paths:
     parameters: [{ $ref: '#/components/parameters/categoryId' }, { $ref: '#/components/parameters/droneId' }]
     get:
       tags: [Reviews]
-      summary: Drono atsiliepimų sąrašas
+      summary: Drono atsiliepimų sąrašas (hierarchinis per visus 3 objektus, filtrai, puslapiavimas)
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+        - { name: minRating, in: query, description: Mažiausias įvertinimas, schema: { type: integer, minimum: 1, maximum: 5 }, example: 4 }
+        - { name: recommended, in: query, schema: { type: boolean }, example: true }
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema: { type: array, items: { $ref: '#/components/schemas/Review' } }
+              schema: { $ref: '#/components/schemas/ReviewPage' }
               example:
-                - { id: 2, drone_id: 1, user_id: 3, rating: 4, comment: Smagu skraidyti., recommended: true, flown_at: '2025-07-03', username: ruta }
+                data:
+                  - { id: 2, drone_id: 1, user_id: 3, rating: 4, comment: Smagu skraidyti., recommended: true, flown_at: '2025-07-03', username: ruta, _links: { self: { href: /api/categories/1/drones/1/reviews/2 }, drone: { href: /api/categories/1/drones/1 } } }
+                meta: { page: 1, limit: 10, total: 1, totalPages: 1 }
+                _links:
+                  self: { href: '/api/categories/1/drones/1/reviews?minRating=4&page=1&limit=10' }
+                  first: { href: '/api/categories/1/drones/1/reviews?minRating=4&page=1&limit=10' }
+                  last: { href: '/api/categories/1/drones/1/reviews?minRating=4&page=1&limit=10' }
+        '400': { $ref: '#/components/responses/BadQuery' }
         '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [Reviews]
-      summary: Parašyti atsiliepimą (member, admin)
+      summary: Parašyti atsiliepimą (member, moderator, admin)
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
@@ -247,7 +335,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
     put:
       tags: [Reviews]
-      summary: Atnaujinti atsiliepimą (autorius arba admin)
+      summary: Atnaujinti atsiliepimą (autorius, moderator arba admin)
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
@@ -264,7 +352,7 @@ paths:
         '422': { $ref: '#/components/responses/Unprocessable' }
     delete:
       tags: [Reviews]
-      summary: Ištrinti atsiliepimą (autorius arba admin)
+      summary: Ištrinti atsiliepimą (autorius, moderator arba admin)
       security: [{ bearerAuth: [] }]
       responses:
         '204': { description: Ištrinta }
@@ -279,10 +367,13 @@ components:
     categoryId: { name: categoryId, in: path, required: true, schema: { type: integer }, example: 1 }
     droneId: { name: droneId, in: path, required: true, schema: { type: integer }, example: 1 }
     reviewId: { name: reviewId, in: path, required: true, schema: { type: integer }, example: 1 }
+    page: { name: page, in: query, description: Puslapio numeris (nuo 1), schema: { type: integer, minimum: 1, default: 1 }, example: 1 }
+    limit: { name: limit, in: query, description: Įrašų puslapyje, schema: { type: integer, minimum: 1, maximum: 100, default: 10 }, example: 10 }
   responses:
     BadRequest: { description: Neteisingas JSON arba tuščias užklausos turinys, content: { application/json: { schema: { $ref: '#/components/schemas/Error' }, example: { error: Neteisingas JSON formatas } } } }
     Unauthorized: { description: Nėra arba netinkamas žetonas, content: { application/json: { schema: { $ref: '#/components/schemas/Error' }, example: { error: Reikia prisijungti } } } }
     Forbidden: { description: Neturite teisių, content: { application/json: { schema: { $ref: '#/components/schemas/Error' }, example: { error: Neturite teisių } } } }
+    BadQuery: { description: Neteisingi užklausos (query) parametrai, content: { application/json: { schema: { $ref: '#/components/schemas/Error' }, example: { error: Neteisingi užklausos parametrai, details: ['page turi būti sveikas skaičius >= 1'] } } } }
     NotFound: { description: Resursas nerastas, content: { application/json: { schema: { $ref: '#/components/schemas/Error' }, example: { error: Kategorija nerasta } } } }
     Unprocessable: { description: Validacijos klaida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' }, example: { error: Validacijos klaida, details: [rating per didelis (max 5)] } } } }
   schemas:
@@ -296,9 +387,9 @@ components:
     Tokens:
       type: object
       properties:
-        accessToken: { type: string, description: 'JWT (15 min), payload: sub, username, role' }
+        accessToken: { type: string, description: 'JWT HS256 (15 min), payload: sub, username, role, jti, iat, exp' }
         refreshToken: { type: string, description: 'Galioja 7 dienas, vienkartinis' }
-        user: { type: object, properties: { id: { type: integer }, username: { type: string }, role: { type: string, enum: [member, admin] } } }
+        user: { type: object, properties: { id: { type: integer }, username: { type: string }, role: { type: string, enum: [member, moderator, admin] } } }
     CategoryInput:
       type: object
       required: [name]
@@ -307,7 +398,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/CategoryInput'
         - type: object
-          properties: { id: { type: integer }, created_at: { type: string }, drone_count: { type: integer } }
+          properties: { id: { type: integer }, created_at: { type: string }, drone_count: { type: integer }, _links: { $ref: '#/components/schemas/Links' } }
     DroneInput:
       type: object
       required: [name, manufacturer, price]
@@ -322,7 +413,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/DroneInput'
         - type: object
-          properties: { id: { type: integer }, category_id: { type: integer }, created_at: { type: string }, avg_rating: { type: number, nullable: true }, review_count: { type: integer } }
+          properties: { id: { type: integer }, category_id: { type: integer }, created_at: { type: string }, avg_rating: { type: number, nullable: true }, review_count: { type: integer }, _links: { $ref: '#/components/schemas/Links' } }
     ReviewInput:
       type: object
       required: [rating, comment]
@@ -335,4 +426,37 @@ components:
       allOf:
         - $ref: '#/components/schemas/ReviewInput'
         - type: object
-          properties: { id: { type: integer }, drone_id: { type: integer }, user_id: { type: integer }, username: { type: string }, created_at: { type: string } }
+          properties: { id: { type: integer }, drone_id: { type: integer }, user_id: { type: integer }, username: { type: string }, created_at: { type: string }, _links: { $ref: '#/components/schemas/Links' } }
+    Links:
+      type: object
+      description: Hypermedia nuorodos į susijusius resursus
+      additionalProperties: { type: object, properties: { href: { type: string }, method: { type: string } } }
+    PageMeta:
+      type: object
+      properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer }, totalPages: { type: integer } }
+    CategoryPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Category' } }, meta: { $ref: '#/components/schemas/PageMeta' }, _links: { $ref: '#/components/schemas/Links' } }
+    DronePage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Drone' } }, meta: { $ref: '#/components/schemas/PageMeta' }, _links: { $ref: '#/components/schemas/Links' } }
+    ReviewPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Review' } }, meta: { $ref: '#/components/schemas/PageMeta' }, _links: { $ref: '#/components/schemas/Links' } }
+    Profile:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        role: { type: string, enum: [member, moderator, admin] }
+        stats: { type: object, properties: { review_count: { type: integer }, avg_rating: { type: number, nullable: true } } }
+        reviews: { type: array, items: { type: object } }
+        _links: { $ref: '#/components/schemas/Links' }
+    Dashboard:
+      type: object
+      properties:
+        totals: { type: object, properties: { categories: { type: integer }, drones: { type: integer }, reviews: { type: integer }, users: { type: integer }, avg_rating: { type: number } } }
+        categories: { type: array, items: { type: object } }
+        topDrones: { type: array, items: { type: object } }
+        latestReviews: { type: array, items: { type: object } }
+        _links: { $ref: '#/components/schemas/Links' }

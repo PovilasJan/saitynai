@@ -2,33 +2,46 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
-import { Modal, ErrorBox, Stars } from '../components'
+import { Modal, ConfirmModal, ErrorBox, Stars, Pager, Spinner, useToast } from '../components'
 import { EditIcon, TrashIcon, InfoIcon, BackIcon, UserIcon } from '../icons'
+
+const LIMIT = 5
 
 export default function Drone() {
   const { cid, did } = useParams()
-  const { user, isAdmin } = useAuth()
+  const { user, canModerate } = useAuth()
+  const toast = useToast()
   const [drone, setDrone] = useState(null)
-  const [reviews, setReviews] = useState([])
+  const [res, setRes] = useState(null)
+  const [page, setPage] = useState(1)
+  const [minRating, setMinRating] = useState('')
   const [specs, setSpecs] = useState(false)
   const [edit, setEdit] = useState(null)
+  const [del, setDel] = useState(null)
   const [err, setErr] = useState('')
   const base = `/categories/${cid}/drones/${did}`
 
-  const load = () => {
-    api(base).then(setDrone).catch((e) => setErr(e.message))
-    api(`${base}/reviews`).then(setReviews).catch(() => {})
+  const loadDrone = () => api(base).then(setDrone).catch((e) => setErr(e.message))
+  const loadReviews = () => {
+    const q = new URLSearchParams({ page, limit: LIMIT })
+    if (minRating) q.set('minRating', minRating)
+    api(`${base}/reviews?${q}`).then(setRes).catch(() => {})
   }
-  useEffect(load, [base])
+  const reload = () => { loadDrone(); loadReviews() }
+  useEffect(() => { loadDrone() }, [base]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadReviews() }, [base, page, minRating]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const remove = async (r) => {
-    if (!confirm('Ištrinti atsiliepimą?')) return
-    await api(`${base}/reviews/${r.id}`, { method: 'DELETE' }).then(load).catch((e) => setErr(e.message))
+    try {
+      await api(`${base}/reviews/${r.id}`, { method: 'DELETE' })
+      toast('Atsiliepimas ištrintas')
+      reload()
+    } catch (e) { toast(e.message, 'error') }
   }
 
   if (err && !drone) return <ErrorBox msg={err} />
-  if (!drone) return <p>Kraunama...</p>
-  const avg = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
+  if (!drone) return <Spinner />
+  const avg = drone.avg_rating || 0
 
   return (
     <>
@@ -39,16 +52,24 @@ export default function Drone() {
           <small className="muted">{drone.manufacturer}</small>
           <h1>{drone.name}</h1>
           <p className="price big">{drone.price} €</p>
-          <p><Stars value={avg} size={20} /> {avg.toFixed(1)} ({reviews.length} atsiliepimai)</p>
+          <p><Stars value={avg} size={20} /> {avg.toFixed(1)} ({drone.review_count} atsiliepimai)</p>
           <button className="btn outline" onClick={() => setSpecs(true)}><InfoIcon size={18} /> Specifikacija</button>
         </div>
       </section>
 
       <div className="two-col">
         <section>
-          <h2>Atsiliepimai</h2>
+          <div className="row-between section-head-sm">
+            <h2>Atsiliepimai</h2>
+            <select aria-label="Filtruoti pagal įvertinimą" value={minRating} onChange={(e) => { setMinRating(e.target.value); setPage(1) }}>
+              <option value="">Visi įvertinimai</option>
+              <option value="5">Tik 5 ★</option>
+              <option value="4">4 ★ ir daugiau</option>
+              <option value="3">3 ★ ir daugiau</option>
+            </select>
+          </div>
           <ErrorBox msg={err} />
-          {reviews.map((r) => (
+          {!res ? <Spinner /> : res.data.map((r) => (
             <article key={r.id} className="review">
               <div className="row-between">
                 <strong><UserIcon size={16} /> {r.username}</strong>
@@ -57,20 +78,21 @@ export default function Drone() {
               <p>{r.comment}</p>
               <div className="row-between">
                 <small className="muted">{r.flown_at ? `Skraidyta ${r.flown_at}` : ''} {r.recommended ? '· Rekomenduoja' : '· Nerekomenduoja'}</small>
-                {user && (isAdmin || user.id === r.user_id) && (
+                {user && (canModerate || user.id === r.user_id) && (
                   <span>
                     <button className="icon-btn" aria-label="Redaguoti" onClick={() => setEdit(r)}><EditIcon size={16} /></button>
-                    <button className="icon-btn danger" aria-label="Ištrinti" onClick={() => remove(r)}><TrashIcon size={16} /></button>
+                    <button className="icon-btn danger" aria-label="Ištrinti" onClick={() => setDel(r)}><TrashIcon size={16} /></button>
                   </span>
                 )}
               </div>
             </article>
           ))}
-          {!reviews.length && <p className="muted">Atsiliepimų dar nėra. Būkite pirmas!</p>}
+          {res && !res.data.length && <p className="muted">{minRating ? 'Tokių atsiliepimų nėra.' : 'Atsiliepimų dar nėra. Būkite pirmas!'}</p>}
+          <Pager meta={res?.meta} onPage={setPage} />
         </section>
         <aside className="panel">
           <h3>Palikti atsiliepimą</h3>
-          {user ? <ReviewForm base={base} onDone={load} /> : <p><Link to="/login">Prisijunkite</Link>, kad galėtumėte palikti atsiliepimą.</p>}
+          {user ? <ReviewForm base={base} onDone={(msg) => { toast(msg); setPage(1); reload() }} /> : <p><Link to="/login">Prisijunkite</Link>, kad galėtumėte palikti atsiliepimą.</p>}
         </aside>
       </div>
 
@@ -90,9 +112,10 @@ export default function Drone() {
       )}
       {edit && (
         <Modal title="Redaguoti atsiliepimą" onClose={() => setEdit(null)}>
-          <ReviewForm base={base} review={edit} onDone={() => { setEdit(null); load() }} />
+          <ReviewForm base={base} review={edit} onDone={(msg) => { setEdit(null); toast(msg); reload() }} />
         </Modal>
       )}
+      {del && <ConfirmModal text={`Ištrinti naudotojo ${del.username} atsiliepimą?`} onConfirm={() => remove(del)} onClose={() => setDel(null)} />}
     </>
   )
 }
@@ -109,7 +132,7 @@ function ReviewForm({ base, review = {}, onDone }) {
       await api(review.id ? `${base}/reviews/${review.id}` : `${base}/reviews`, { method: review.id ? 'PUT' : 'POST', body })
       if (!review.id) setF(empty)
       setErr('')
-      onDone()
+      onDone(review.id ? 'Atsiliepimas atnaujintas' : 'Ačiū! Atsiliepimas paskelbtas')
     } catch (e) { setErr(e.message) }
   }
   return (

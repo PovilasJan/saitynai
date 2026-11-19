@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
-import { ErrorBox } from '../components'
+import { ErrorBox, useToast } from '../components'
 
-function AuthForm({ title, action, alt }) {
+function AuthForm({ title, action, alt, done }) {
+  const toast = useToast()
   const [f, setF] = useState({ username: '', password: '' })
   const [err, setErr] = useState('')
   const nav = useNavigate()
   const submit = async (e) => {
     e.preventDefault()
-    try { await action(f.username, f.password); nav('/') } catch (e) { setErr(e.message) }
+    try { await action(f.username, f.password); toast(done); nav('/') } catch (e) { setErr(e.message) }
   }
   return (
     <div className="auth-box">
@@ -27,10 +28,10 @@ function AuthForm({ title, action, alt }) {
 
 export function Login() {
   const { login } = useAuth()
-  return <AuthForm title="Prisijungti" action={login} alt={<>Neturite paskyros? <Link to="/register">Registruokitės</Link></>} />
+  return <AuthForm title="Prisijungti" done="Sėkmingai prisijungėte" action={login} alt={<>Neturite paskyros? <Link to="/register">Registruokitės</Link></>} />
 }
 
 export function Register() {
   const { register } = useAuth()
-  return <AuthForm title="Registruotis" action={register} alt={<>Jau turite paskyrą? <Link to="/login">Prisijunkite</Link></>} />
+  return <AuthForm title="Registruotis" done="Paskyra sukurta, sveiki!" action={register} alt={<>Jau turite paskyrą? <Link to="/login">Prisijunkite</Link></>} />
 }

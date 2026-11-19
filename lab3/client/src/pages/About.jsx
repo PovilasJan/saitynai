@@ -7,6 +7,7 @@ export default function About() {
       <ul>
         <li><b>Svečias</b> - peržiūri kategorijas, dronus ir atsiliepimus.</li>
         <li><b>Narys</b> - gali rašyti, redaguoti ir trinti savo atsiliepimus.</li>
+        <li><b>Moderatorius</b> - gali redaguoti ir trinti bet kurio naudotojo atsiliepimus (turinio moderavimas).</li>
         <li><b>Administratorius</b> - valdo kategorijas, dronus ir visus atsiliepimus.</li>
       </ul>
     </section>
